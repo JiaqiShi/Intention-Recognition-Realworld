@@ -426,12 +426,6 @@ def run(
     tracked_ids = []
     target_ids = []
 
-    # read_times = []
-    # process_times = []
-
-    # cv2.startWindowThread()
-    # cv2.namedWindow("frame", cv2.WINDOW_AUTOSIZE)
-
     while True:
 
         try:
