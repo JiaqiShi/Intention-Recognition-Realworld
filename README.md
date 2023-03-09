@@ -11,5 +11,7 @@ Predict Intention from real-world human behaviors using graph convolutional netw
 
 # To Do
 
+The following work will be finished soon.
+
 1. upload the lateset models
 2. upload training code
