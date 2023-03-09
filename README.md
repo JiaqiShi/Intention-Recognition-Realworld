@@ -1,6 +1,6 @@
 # Intention Recognition in real world
 
-Predict Intention from real-world human behavior
+Predict Intention from real-world human behaviors using graph convolutional network
 
 # Dependencies
 
