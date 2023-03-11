@@ -6,15 +6,20 @@ import numpy as np
 
 from model.graph import Graph
 
+
 class IntentGCN(nn.Module):
-    def __init__(self, input_shape, num_class, graph_args=None, edge_importance_weighting=True, **kwargs):
+    def __init__(self,
+                 input_shape,
+                 num_class,
+                 graph_args=None,
+                 edge_importance_weighting=True,
+                 **kwargs):
         super().__init__()
 
         if type(input_shape) == list:
             input_shape = input_shape[0]
         max_T, num_joints, in_channels = input_shape
         self.in_channels = in_channels
-
 
         if graph_args is not None:
             self.graph = Graph(**graph_args)
@@ -40,19 +45,32 @@ class IntentGCN(nn.Module):
 
         self.fcn = nn.Linear(self.output_channels[-1], num_class)
 
-    def _get_gcn_layers(self, layer_num, channels, stride_2_layer_index, dropout=0, **kw):
-
+    def _get_gcn_layers(self,
+                        layer_num,
+                        channels,
+                        stride_2_layer_index,
+                        dropout=0,
+                        **kw):
         def str2intlist(inp_str):
             return [int(s) for s in inp_str.split(',')]
 
         def get_output_channels(layer_num, channels_list):
             step_num = len(channels_list)
-            layer_steps = [int(layer_num/step_num)+1 if i<layer_num%step_num else int(layer_num/step_num) for i in range(step_num)]
-            return [channels_list[step] for step, layer in enumerate(layer_steps) for _ in range(layer)]
+            layer_steps = [
+                int(layer_num / step_num) +
+                1 if i < layer_num % step_num else int(layer_num / step_num)
+                for i in range(step_num)
+            ]
+            return [
+                channels_list[step] for step, layer in enumerate(layer_steps)
+                for _ in range(layer)
+            ]
 
         channels_list = str2intlist(channels)
-        if layer_num<len(channels_list):
-            raise ValueError(f'Too many channels given. Expected length larger than {len(channels)}, but got {layer_num}.')
+        if layer_num < len(channels_list):
+            raise ValueError(
+                f'Too many channels given. Expected length larger than {len(channels)}, but got {layer_num}.'
+            )
         stride_2_layers = str2intlist(stride_2_layer_index)
         output_channels = get_output_channels(layer_num, channels_list)
         self.output_channels = output_channels
@@ -64,9 +82,13 @@ class IntentGCN(nn.Module):
             else:
                 stride = 1
             if i == 0:
-                gcn_layer_list.append(GraphConvBlock(self.in_channels, output_channels[i], self.kernel_size, stride, **kw))
+                gcn_layer_list.append(
+                    GraphConvBlock(self.in_channels, output_channels[i],
+                                   self.kernel_size, stride, **kw))
             else:
-                gcn_layer_list.append(GraphConvBlock(output_channels[i-1], output_channels[i], self.kernel_size, stride, dropout, **kw))
+                gcn_layer_list.append(
+                    GraphConvBlock(output_channels[i - 1], output_channels[i],
+                                   self.kernel_size, stride, dropout, **kw))
         self.blocks = nn.ModuleList(gcn_layer_list)
 
     def get_model_name(self):
@@ -95,7 +117,7 @@ class IntentGCN(nn.Module):
         x = self.fcn(hiddens)
 
         return x
-    
+
     def get_features(self, x):
 
         if type(x) == list:
@@ -117,23 +139,35 @@ class IntentGCN(nn.Module):
         hiddens = F.avg_pool2d(x, x.size()[2:]).view(x.size(0), -1)
 
         return hiddens
-    
+
+
 class GraphConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, dropout=0, residual=True, adap_graph=True,
-                 weighted_sum=True, n_head=4, d_kc=0.25, d_vc=0.25):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 stride=1,
+                 dropout=0,
+                 residual=True,
+                 adap_graph=True,
+                 weighted_sum=True,
+                 n_head=4,
+                 d_kc=0.25,
+                 d_vc=0.25):
         super().__init__()
 
         self.scn = SpatialGraphConv(in_channels,
-                         out_channels,
-                         kernel_size[1],
-                         adap_graph=adap_graph,
-                         weighted_sum=weighted_sum,
-                         n_head=n_head,
-                         d_kc=d_kc,
-                         d_vc=d_vc)
+                                    out_channels,
+                                    kernel_size[1],
+                                    adap_graph=adap_graph,
+                                    weighted_sum=weighted_sum,
+                                    n_head=n_head,
+                                    d_kc=d_kc,
+                                    d_vc=d_vc)
 
         self.tcn = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels, (kernel_size[0], 1), (stride, 1), ((kernel_size[0] - 1) // 2, 0)),
+            nn.Conv2d(out_channels, out_channels, (kernel_size[0], 1),
+                      (stride, 1), ((kernel_size[0] - 1) // 2, 0)),
             nn.BatchNorm2d(out_channels),
             nn.Dropout(dropout, inplace=True),
         )
@@ -162,7 +196,8 @@ class GraphConvBlock(nn.Module):
         x = self.tcn(x) + res
 
         return self.relu(x)
-    
+
+
 class SpatialGraphConv(nn.Module):
     def __init__(self,
                  in_channels,
@@ -191,21 +226,21 @@ class SpatialGraphConv(nn.Module):
             d_vc = 1
 
         self.partconv = nn.Conv2d(in_channels,
-                              out_channels * kernel_size,
-                              kernel_size=(t_kernel_size, 1),
-                              padding=(t_padding, 0),
-                              stride=(t_stride, 1),
-                              dilation=(t_dilation, 1),
-                              bias=bias)
+                                  out_channels * kernel_size,
+                                  kernel_size=(t_kernel_size, 1),
+                                  padding=(t_padding, 0),
+                                  stride=(t_stride, 1),
+                                  dilation=(t_dilation, 1),
+                                  bias=bias)
 
         if adap_graph is True:
             self.adapconv = AdapGraphConv(n_head,
-                                    d_in=in_channels,
-                                    d_out=out_channels,
-                                    d_k=int(d_kc * out_channels),
-                                    d_v=int(out_channels * d_vc),
-                                    residual=True,
-                                    res_fc=False)
+                                          d_in=in_channels,
+                                          d_out=out_channels,
+                                          d_k=int(d_kc * out_channels),
+                                          d_v=int(out_channels * d_vc),
+                                          residual=True,
+                                          res_fc=False)
 
         if weighted_sum is True:
             print('[Info] gate activated.')
@@ -243,7 +278,8 @@ class SpatialGraphConv(nn.Module):
         f = self.out(f)
 
         return f
-    
+
+
 class AdapGraphConv(nn.Module):
     def __init__(self,
                  n_head,
