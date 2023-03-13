@@ -9,9 +9,14 @@ Predict Intention from real-world human behaviors using graph convolutional netw
 3. MMpose
 4. Opencv-python
 
+# Instruction
+
+For graph construction and graph convolutional network, please see `./model/graph.py` and `./model/intentgcn.py`.
+
+For real-time recognition framework, please see `./detect_real_time.py`.
+
 # To Do
 
 The following work will be finished soon.
 
-1. upload the lateset models
-2. upload training code
+1. upload training code
