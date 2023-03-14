@@ -14,9 +14,3 @@ Predict Intention from real-world human behaviors using graph convolutional netw
 For graph construction and graph convolutional network, please see `./model/graph.py` and `./model/intentgcn.py`.
 
 For real-time recognition framework, please see `./detect_real_time.py`.
-
-# To Do
-
-The following work will be finished soon.
-
-1. upload training code
