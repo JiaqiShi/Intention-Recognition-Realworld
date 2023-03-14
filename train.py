@@ -142,7 +142,7 @@ def main(args):
 
 if __name__ == '__main__':
 
-    args = JsonConfig('hparas/gcn_warmup.json')
+    args = JsonConfig('hparas/gcn.json')
 
     print(args)
 
