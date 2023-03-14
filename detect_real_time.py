@@ -287,8 +287,8 @@ def run(
         # ResNet args
         resnet_divice='cuda:0',
         # Intention args
-        intention_model_type='cnn+mlp+mlp-double',
-        intention_model_path='weights/model.pkl',
+        intention_model_type='gcn+mlp+mlp',
+        intention_model_path='model.pkl',
         intention_device='cuda:0',
 ):
 
@@ -519,7 +519,7 @@ def run(
             singleperson_track_dict, target_id, tracked_ids = pick_up_target(person_tracking_dict, new_crop_paras, tracked_ids)
             
             if target_id is not None:
-                print('############### Tracking:', target_id)
+                print('[Info] Tracking:', target_id)
                 # intention_inference(singleperson_track_dict, model_pos, im0)
                 Q_target.put((target_id, singleperson_track_dict, im0))
                 if save_result:
