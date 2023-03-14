@@ -24,7 +24,7 @@ from torchvision.models import ResNet50_Weights, resnet50
 from pathlib import Path
 
 from utils.common_utils import *
-from intention_models import *
+from model.intention_models import *
 
 # mmpose import
 from mmpose.apis import (get_track_id, inference_top_down_pose_model,
@@ -39,7 +39,7 @@ from yolov5.utils.general import (LOGGER, check_file, check_img_size,
                                   non_max_suppression, scale_coords)
 from yolov5.utils.plots import Annotator, colors
 
-MODEL = {'cnn+mlp+mlp':CNN_MLP_MLP, 'cnn+mlp+mlp-double':CNN_MLP_MLP_double}
+MODEL = {'gcn+mlp+mlp':GCN_MLP_MLP}
 
 class ThreadingLoadWebcam:
     def __init__(self, pipe='0', img_size=640, stride=32):
