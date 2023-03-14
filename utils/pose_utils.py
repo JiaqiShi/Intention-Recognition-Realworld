@@ -4,17 +4,18 @@ from itertools import zip_longest
 import torch
 import torch.nn as nn
 
+
 def normalize_screen_coordinates(X, w, h):
     assert X.shape[-1] == 2
 
     # Normalize so that [0, w] is mapped to [-1, 1], while preserving the aspect ratio
     return X / w * 2 - [1, h / w]
 
+
 class TemporalModelBase(nn.Module):
     """
     Do not instantiate this class.
     """
-
     def __init__(self, num_joints_in, in_features, num_joints_out,
                  filter_widths, causal, dropout, channels):
         super().__init__()
@@ -84,9 +85,15 @@ class TemporalModel(TemporalModelBase):
     Reference 3D pose estimation model with temporal convolutions.
     This implementation can be used for all use-cases.
     """
-
-    def __init__(self, num_joints_in, in_features, num_joints_out,
-                 filter_widths, causal=False, dropout=0.25, channels=1024, dense=False):
+    def __init__(self,
+                 num_joints_in,
+                 in_features,
+                 num_joints_out,
+                 filter_widths,
+                 causal=False,
+                 dropout=0.25,
+                 channels=1024,
+                 dense=False):
         """
         Initialize this model.
 
@@ -100,9 +107,13 @@ class TemporalModel(TemporalModelBase):
         channels -- number of convolution channels
         dense -- use regular dense convolutions instead of dilated convolutions (ablation experiment)
         """
-        super().__init__(num_joints_in, in_features, num_joints_out, filter_widths, causal, dropout, channels)
+        super().__init__(num_joints_in, in_features, num_joints_out,
+                         filter_widths, causal, dropout, channels)
 
-        self.expand_conv = nn.Conv1d(num_joints_in * in_features, channels, filter_widths[0], bias=False)
+        self.expand_conv = nn.Conv1d(num_joints_in * in_features,
+                                     channels,
+                                     filter_widths[0],
+                                     bias=False)
 
         layers_conv = []
         layers_bn = []
@@ -111,14 +122,19 @@ class TemporalModel(TemporalModelBase):
         next_dilation = filter_widths[0]
         for i in range(1, len(filter_widths)):
             self.pad.append((filter_widths[i] - 1) * next_dilation // 2)
-            self.causal_shift.append((filter_widths[i] // 2 * next_dilation) if causal else 0)
+            self.causal_shift.append((filter_widths[i] // 2 *
+                                      next_dilation) if causal else 0)
 
-            layers_conv.append(nn.Conv1d(channels, channels,
-                                         filter_widths[i] if not dense else (2 * self.pad[-1] + 1),
-                                         dilation=next_dilation if not dense else 1,
-                                         bias=False))
+            layers_conv.append(
+                nn.Conv1d(channels,
+                          channels,
+                          filter_widths[i] if not dense else
+                          (2 * self.pad[-1] + 1),
+                          dilation=next_dilation if not dense else 1,
+                          bias=False))
             layers_bn.append(nn.BatchNorm1d(channels, momentum=0.1))
-            layers_conv.append(nn.Conv1d(channels, channels, 1, dilation=1, bias=False))
+            layers_conv.append(
+                nn.Conv1d(channels, channels, 1, dilation=1, bias=False))
             layers_bn.append(nn.BatchNorm1d(channels, momentum=0.1))
 
             next_dilation *= filter_widths[i]
@@ -133,18 +149,30 @@ class TemporalModel(TemporalModelBase):
             pad = self.pad[i + 1]
             shift = self.causal_shift[i + 1]
             # clip
-            res = x[:, :, pad + shift: x.shape[2] - pad + shift]
+            res = x[:, :, pad + shift:x.shape[2] - pad + shift]
 
-            x = self.drop(self.relu(self.layers_bn[2 * i](self.layers_conv[2 * i](x))))
-            x = res + self.drop(self.relu(self.layers_bn[2 * i + 1](self.layers_conv[2 * i + 1](x))))
+            x = self.drop(
+                self.relu(self.layers_bn[2 * i](self.layers_conv[2 * i](x))))
+            x = res + self.drop(
+                self.relu(self.layers_bn[2 * i + 1](
+                    self.layers_conv[2 * i + 1](x))))
 
         x = self.shrink(x)
         return x
 
-class UnchunkedGenerator:
 
-    def __init__(self, cameras, poses_3d, poses_2d, pad=0, causal_shift=0,
-                 augment=False, kps_left=None, kps_right=None, joints_left=None, joints_right=None):
+class UnchunkedGenerator:
+    def __init__(self,
+                 cameras,
+                 poses_3d,
+                 poses_2d,
+                 pad=0,
+                 causal_shift=0,
+                 augment=False,
+                 kps_left=None,
+                 kps_right=None,
+                 joints_left=None,
+                 joints_right=None):
         assert poses_3d is None or len(poses_3d) == len(poses_2d)
         assert cameras is None or len(cameras) == len(poses_2d)
 
@@ -173,13 +201,18 @@ class UnchunkedGenerator:
         self.augment = augment
 
     def next_epoch(self):
-        for seq_cam, seq_3d, seq_2d in zip_longest(self.cameras, self.poses_3d, self.poses_2d):
-            batch_cam = None if seq_cam is None else np.expand_dims(seq_cam, axis=0)
-            batch_3d = None if seq_3d is None else np.expand_dims(seq_3d, axis=0)
+        for seq_cam, seq_3d, seq_2d in zip_longest(self.cameras, self.poses_3d,
+                                                   self.poses_2d):
+            batch_cam = None if seq_cam is None else np.expand_dims(seq_cam,
+                                                                    axis=0)
+            batch_3d = None if seq_3d is None else np.expand_dims(seq_3d,
+                                                                  axis=0)
             # 2D input padding to compensate for valid convolutions, per side (depends on the receptive field)
-            batch_2d = np.expand_dims(np.pad(seq_2d,
-                                             ((self.pad + self.causal_shift, self.pad - self.causal_shift), (0, 0), (0, 0)),
-                                             'edge'), axis=0)
+            batch_2d = np.expand_dims(np.pad(
+                seq_2d,
+                ((self.pad + self.causal_shift, self.pad - self.causal_shift),
+                 (0, 0), (0, 0)), 'edge'),
+                                      axis=0)
             if self.augment:
                 # Append flipped version
                 if batch_cam is not None:
@@ -190,13 +223,19 @@ class UnchunkedGenerator:
                 if batch_3d is not None:
                     batch_3d = np.concatenate((batch_3d, batch_3d), axis=0)
                     batch_3d[1, :, :, 0] *= -1
-                    batch_3d[1, :, self.joints_left + self.joints_right] = batch_3d[1, :, self.joints_right + self.joints_left]
+                    batch_3d[1, :, self.joints_left +
+                             self.joints_right] = batch_3d[1, :,
+                                                           self.joints_right +
+                                                           self.joints_left]
 
                 batch_2d = np.concatenate((batch_2d, batch_2d), axis=0)
                 batch_2d[1, :, :, 0] *= -1
-                batch_2d[1, :, self.kps_left + self.kps_right] = batch_2d[1, :, self.kps_right + self.kps_left]
+                batch_2d[1, :, self.kps_left +
+                         self.kps_right] = batch_2d[1, :, self.kps_right +
+                                                    self.kps_left]
 
             yield batch_cam, batch_3d, batch_2d
+
 
 def evaluate(test_generator, model_pos, action=None, return_predictions=False):
     """
@@ -207,7 +246,8 @@ def evaluate(test_generator, model_pos, action=None, return_predictions=False):
     :param return_predictions: return predictions if true
     :return:
     """
-    joints_left, joints_right = list([4, 5, 6, 11, 12, 13]), list([1, 2, 3, 14, 15, 16])
+    joints_left, joints_right = list([4, 5, 6, 11, 12,
+                                      13]), list([1, 2, 3, 14, 15, 16])
     with torch.no_grad():
         model_pos.eval()
         N = 0
@@ -221,7 +261,11 @@ def evaluate(test_generator, model_pos, action=None, return_predictions=False):
             if test_generator.augment_enabled():
                 # Undo flipping and take average with non-flipped version
                 predicted_3d_pos[1, :, :, 0] *= -1
-                predicted_3d_pos[1, :, joints_left + joints_right] = predicted_3d_pos[1, :, joints_right + joints_left]
-                predicted_3d_pos = torch.mean(predicted_3d_pos, dim=0, keepdim=True)
+                predicted_3d_pos[1, :, joints_left +
+                                 joints_right] = predicted_3d_pos[
+                                     1, :, joints_right + joints_left]
+                predicted_3d_pos = torch.mean(predicted_3d_pos,
+                                              dim=0,
+                                              keepdim=True)
             if return_predictions:
                 return predicted_3d_pos.squeeze(0).cpu().numpy()

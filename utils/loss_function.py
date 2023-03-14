@@ -1,8 +1,13 @@
 import torch
 import torch.nn as nn
 
+
 class Multi_weighted_crossentropyloss(nn.Module):
-    def __init__(self, labels, weighted=False, label_weight=None, device=None) -> None:
+    def __init__(self,
+                 labels,
+                 weighted=False,
+                 label_weight=None,
+                 device=None) -> None:
         super().__init__()
 
         self.labels = labels
@@ -25,15 +30,20 @@ class Multi_weighted_crossentropyloss(nn.Module):
 
     def _get_loss(self, label):
         if self.weighted:
-            weight = torch.tensor(self.weight_dic[label], dtype=torch.float).to(self.device)
-            weight = sum(weight)/weight
-            weight = weight/sum(weight)
+            weight = torch.tensor(self.weight_dic[label],
+                                  dtype=torch.float).to(self.device)
+            weight = sum(weight) / weight
+            weight = weight / sum(weight)
             return nn.CrossEntropyLoss(weight=weight)
         else:
             return nn.CrossEntropyLoss()
 
     def _load_weight_dic(self):
-        self.weight_dic = {'tem':[1,1.05],'san':[1,1.63],'tem_or_san':[1,1.7]}
+        self.weight_dic = {
+            'tem': [1, 1.05],
+            'san': [1, 1.63],
+            'tem_or_san': [1, 1.7]
+        }
 
     def forward(self, outputs, y):
         losses = []
