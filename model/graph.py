@@ -28,8 +28,9 @@ class Graph():
         - part
         max_dis_connect: max connection distance
     '''
-    def __init__(self, strategy='spatial'):
+    def __init__(self, strategy='spatial', max_dis_connect=1):
         self.strategy = strategy
+        self.max_dis_connect = max_dis_connect
 
         self.get_edge()
         self.get_adjacency()
