@@ -255,7 +255,7 @@ class SpatialGraphConv(nn.Module):
 
         inp = self.bn(x)
 
-        f_c = self.conv(inp)
+        f_c = self.partconv(inp)
 
         # spatial graph convolution
         N, KC, T, V = f_c.size()
